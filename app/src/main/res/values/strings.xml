@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">ApplicationIjin</string>
+    <String-array name="kategori">
+        <list>Izin Sakit</list>
+        <list>Izin Bencana</list>
+        <list>Izin Anak Sakit</list>
+    </String-array>
+</resources>
