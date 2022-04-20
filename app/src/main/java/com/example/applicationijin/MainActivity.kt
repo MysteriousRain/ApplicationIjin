@@ -2,8 +2,10 @@ package com.example.applicationijin
 
 import android.app.Activity
 import android.app.DatePickerDialog
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.FileUtils
 import android.util.Log
 import android.widget.DatePicker
 import android.widget.Toast
@@ -13,20 +15,31 @@ import com.example.applicationijin.model.ResponsePostData
 import com.example.applicationijin.service.RetrofitConfig
 import com.github.drjacky.imagepicker.ImagePicker
 import kotlinx.android.synthetic.main.activity_main.*
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
+
+
+    lateinit var photoUri: Uri
+
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == Activity.RESULT_OK) {
                 val uri = it.data?.data!!
 
                 imageView.setImageURI(uri)
+                photoUri = uri
             }
         }
 
@@ -63,10 +76,32 @@ class MainActivity : AppCompatActivity() {
 
         })
 
+//        btnSubmit.setOnClickListener({
+//            RetrofitConfig().getIjin().addDataForm(spinnerKategori.selectedItem.toString(),txtDariTanggal.text.toString(),
+//                txtSampaiTanggal.text.toString(),txtPerihal.text.toString(),txtKeterangan.text.toString() ).enqueue(
+//                object:Callback<ResponsePostData>{
+//                    override fun onResponse(
+//                        call: Call<ResponsePostData>,
+//                        response: Response<ResponsePostData>
+//                    ) {
+//                        Toast.makeText(this@MainActivity,(response.body() as ResponsePostData).message,Toast.LENGTH_LONG).show()
+//                    }
+//
+//                    override fun onFailure(call: Call<ResponsePostData>, t: Throwable) {
+//                        Log.e("error post data",t.localizedMessage.toString())
+//                    }
+//
+//                }
+//            )
+//        })
+
+
         btnSubmit.setOnClickListener({
-            RetrofitConfig().getIjin().addDataForm(spinnerKategori.selectedItem.toString(),txtDariTanggal.text.toString(),
-                txtSampaiTanggal.text.toString(),txtPerihal.text.toString(),txtKeterangan.text.toString() ).enqueue(
-                object:Callback<ResponsePostData>{
+            RetrofitConfig().getIjin().addDataAndImage(createRB(spinnerKategori.selectedItem.toString()),createRB(txtDariTanggal.text.toString()),
+                createRB(txtSampaiTanggal.text.toString()),createRB(txtPerihal.text.toString()),createRB(txtKeterangan.text.toString()),
+                uploadImage(photoUri,"lampiran")
+            ).enqueue(
+                object :Callback<ResponsePostData>{
                     override fun onResponse(
                         call: Call<ResponsePostData>,
                         response: Response<ResponsePostData>
@@ -78,8 +113,7 @@ class MainActivity : AppCompatActivity() {
                         Log.e("error post data",t.localizedMessage.toString())
                     }
 
-                }
-            )
+                })
         })
 
     }
@@ -120,4 +154,17 @@ class MainActivity : AppCompatActivity() {
         return dateSetListener
 
     }
+
+
+    fun createRB(data:String):RequestBody{
+        return RequestBody.create(MultipartBody.FORM, data)
+    }
+
+    fun uploadImage(uri:Uri,param:String):MultipartBody.Part{
+        val file:File = File(uri.path)
+        val rb:RequestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+
+        return MultipartBody.Part.createFormData(param,file.name,rb)
+    }
+
 }
